@@ -2,74 +2,51 @@ unit VromFSClasses;
 
 interface
   uses
-    System.Classes,System.SysUtils,FileCtrl,Dialogs,Windows,Zlib;
+    System.Classes,System.SysUtils,FileCtrl,Dialogs,Windows,Zlib,WTExtractorClass;
   type
-   TUpdateFunction = procedure (ArchName: string;FilesCount: integer;Compression: boolean) of object;
-   TProcessFileFunction = procedure (Processed,Total: integer) of object;
-   TUpdateListFunction = procedure (Filename: string;Offset,Size: integer) of object;
-   TVromFSFileStruct = class
+
+   TVromFSFileStruct = class(TAbstractFile)
     private
       FName: string;
       FSize: integer;
       FOffset: Integer;
     public
       Constructor Create;
-      procedure Reset;
-      property Name: string read Fname write FName;
-      property Size: Integer read FSize write FSize;
-      property Offset: integer read FOffset write FOffset;
+      procedure Reset;overload;
+      property Name;
+      property Size;
+      property Offset;
   end;
 
-  TVromFSFileList = class
-  private
-    FVromFSFileStructs: TList;
-    function GetCount: Integer;
-    function GetVromFSFileStruct(Index: Integer): TVromFSFileStruct;
-  public
-    constructor Create;
-    destructor Destroy; override;
-    procedure Clear;
-    procedure Assign(Src: TVromFSFileList);
-    procedure Add(aVromFSFileStruct: TVromFSFileStruct); overload;
-    procedure Add(aVromFSFileStructs: TVromFSFileList); overload;
-    procedure Delete(Index: Integer); overload;
-    procedure Delete(aVromFSFileStruct: TVromFSFileStruct); overload;
-    function IndexOf(aVromFSFileStruct: TVromFSFileStruct): Integer;
-
-    property Count: Integer read GetCount;
-    property VromFSFileStruct[Index: Integer]: TVromFSFileStruct read GetVromFSFileStruct; default;
-  end;
-
-  TVromFSExtractor = class
+  TVromFSExtractor = class(TWTExtractor)
     private
       FOpenFile: TFileStream;
       FOutputFile: TFileStream;
-      FFileList: TVromFSFileList;
+      FFileList: TAbstractFileList;
       FZip: TZDecompressionStream;
       FCompressFlag: boolean;
       FTotalFiles: integer;
       FArchName: string;
       FExtractionPath: string;
       FWorker: TMemoryStream;
-      FUpdateFunction: TUpdateFunction;
-      FProcessFileFunction: TProcessFileFunction;
-      FUpdateListFunction: TUpdateListFunction;
+      //FUpdateFunction: TUpdateFunction;
+     // FProcessFileFunction: TProcessFileFunction;
+     // FUpdateListFunction: TUpdateListFunction;
       Procedure Reset;
     public
       Constructor Create;
       Destructor Destroy;override;
-      procedure OpenArchive(ArchiveName: string);
-      procedure ExtractFile(Idx: integer);
-      procedure ExtractAllFiles;
+      procedure OpenArchive(ArchiveName: string);override;
+      procedure ExtractFile(Idx: integer);override;
+      procedure ExtractAllFiles;override;
     //  procedure
-      property UpdateFunction: TUpdateFunction read FUpdateFunction write FUpdateFunction;
-      property ProcessFileFunction: TProcessFileFunction read FprocessFileFunction write FProcessFileFunction;
-      property UpdateListFunction: TUpdateListFunction read FUpdateListFunction write FUpdateListFunction;
+      property UpdateFunction;
+      property ProcessFileFunction;
+      property UpdateListFunction;
   end;
 
 implementation
-  const
-   ErrItemNotFound = 'Item not found!';
+
 constructor TVromFSFileStruct.Create;
 begin
  Reset;
@@ -82,83 +59,12 @@ begin
  Offset:=-1;
 end;
 
-constructor TVromFSFileList.Create;
-begin
-  FVromFSFileStructs := TList.Create;
-end;
 
-destructor TVromFSFileList.Destroy;
-begin
-  Clear;
-  FVromFSFileStructs.Free;
-  inherited;
-end;
-
-procedure TVromFSFileList.Delete(Index: Integer);
-begin
-  if (Index < 0) or (Index >= Count) then
-    raise Exception.Create(ErrItemNotFound);
-
-  VromFSFileStruct[Index].Free;
-  FVromFSFileStructs.Delete(Index);
-end;
-
-procedure TVromFSFileList.Delete(aVromFSFileStruct: TVromFSFileStruct);
-begin
-  Delete(IndexOf(aVromFSFileStruct));
-end;
-
-procedure TVromFSFileList.Add(aVromFSFileStructs: TVromFSFileList);
-var
-  I: Integer;
-begin
-  for I := 0 to aVromFSFileStructs.Count - 1 do
-    Add(aVromFSFileStructs[I]);
-end;
-
-procedure TVromFSFileList.Add(aVromFSFileStruct: TVromFSFileStruct);
-begin
-  FVromFSFileStructs.Add(aVromFSFileStruct);
-end;
-
-procedure TVromFSFileList.Assign(Src: TVromFSFileList);
-begin
-  Clear;
-  Add(Src);
-end;
-
-procedure TVromFSFileList.Clear;
-var
-  I: Integer;
-begin
-  for I := 0 to Count - 1 do
-    VromFSFileStruct[I].Free;
-  FVromFSFileStructs.Clear;
-end;
-
-
-function TVromFSFileList.GetCount: Integer;
-begin
-  Result := FVromFSFileStructs.Count;
-end;
-
-function TVromFSFileList.GetVromFSFileStruct(Index: Integer): TVromFSFileStruct;
-begin
-  if (Index >= 0) and (Index < Count) then
-    Result := TVromFSFileStruct(FVromFSFileStructs[Index])
-  else
-    Result := nil;
-end;
-
-function TVromFSFileList.IndexOf(aVromFSFileStruct: TVromFSFileStruct): Integer;
-begin
-  Result := FVromFSFileStructs.IndexOf(aVromFSFileStruct);
-end;
 { TVromFSExtractor }
 
 constructor TVromFSExtractor.Create;
 begin
-  FFileList:= TVromFSFileList.Create;
+  FFileList:= TAbstractFileList.Create;
   FWorker:= TMemoryStream.Create;
   FExtractionPath:='';
 end;
@@ -183,7 +89,8 @@ begin
       raise Exception.Create('Path not selected!');
  for i:=0  to FFileList.Count - 1 do
    begin
-     VFSFile:=FFileList[i];
+     ProcessFileFunction(I,FTotalFiles);
+     VFSFile:=TVromFSFileStruct(FFileList[i]);
      FOutputFile:=TfileStream.Create(FExtractionPath+'\'+VFSFile.Name,fmCreate);
      try
        SetLength(FileData,VFSFile.Size);
@@ -210,14 +117,14 @@ begin
              [sdNewUI, sdNewFolder] )then
       FExtractionPath:=dir else
       raise Exception.Create('Path not selected!');
-  VFSFile:=FFileList[idx];
+  VFSFile:=TVromFSFileStruct(FFileList[idx]);
   FOutputFile:=TfileStream.Create(FExtractionPath+'\'+VFSFile.Name,fmCreate);
   try
     SetLength(FileData,VFSFile.Size);
     FWorker.Seek(VFSFile.Offset,SoFromBeginning);
     FWorker.Read(FileData,VFSFile.Size);
     FOutputFile.Write(FileData,VFSFile.Size);
-    ShowMessage('Exctraction '+VFSFile.Name+'successful completed!');
+    ShowMessage('Exctracted: '+VFSFile.Name+'!');
   finally
     FOutputfile.Free;
     Setlength(Filedata,0);
@@ -289,7 +196,7 @@ begin
       VFSFile.Offset:=FileOffset;
       FWorker.Read(FileSize,4);
       VFSFile.Size:=FileSize;
-      FProcessFileFunction(i,FTotalFiles);
+      ProcessFileFunction(i,FTotalFiles);
       FWorker.Seek(8,soFromCurrent);
       NameSectionEnd:=FWorker.Position;
       FFileList.Add(VFSFile);
@@ -307,6 +214,7 @@ begin
   FCompressFlag:=false;
   FTotalFiles:=-1;
   FArchName:='';
+  FFileList.Clear;
   //FExtractionPath:='';
   FWorker.Clear;
 end;

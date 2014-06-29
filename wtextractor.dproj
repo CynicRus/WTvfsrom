@@ -3,9 +3,9 @@
         <ProjectGuid>{5506D23D-F836-4B18-8B42-B8D3F59570CB}</ProjectGuid>
         <ProjectVersion>14.3</ProjectVersion>
         <FrameworkType>VCL</FrameworkType>
-        <MainSource>vromfs.dpr</MainSource>
+        <MainSource>wtextractor.dpr</MainSource>
         <Base>True</Base>
-        <Config Condition="'$(Config)'==''">Release</Config>
+        <Config Condition="'$(Config)'==''">Debug</Config>
         <Platform Condition="'$(Platform)'==''">Win32</Platform>
         <TargetedPlatforms>1</TargetedPlatforms>
         <AppType>Application</AppType>
@@ -87,6 +87,8 @@
             <FormType>dfm</FormType>
         </DCCReference>
         <DCCReference Include="VromFSClasses.pas"/>
+        <DCCReference Include="DXPClasses.pas"/>
+        <DCCReference Include="WTExtractorClass.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>
@@ -140,7 +142,7 @@
                     <VersionInfoKeys Name="CFBundleExecutable"/>
                 </VersionInfoKeys>
                 <Source>
-                    <Source Name="MainSource">vromfs.dpr</Source>
+                    <Source Name="MainSource">wtextractor.dpr</Source>
                 </Source>
             </Delphi.Personality>
             <Deployment/>

@@ -1,7 +1,7 @@
 object Form1: TForm1
   Left = 0
   Top = 0
-  Caption = 'War Thunder VromFS extractor'
+  Caption = 'War Thunder resource extractor'
   ClientHeight = 363
   ClientWidth = 428
   Color = clBtnFace
@@ -40,7 +40,6 @@ object Form1: TForm1
     PopupMenu = ExtractMenu
     TabOrder = 0
     ViewStyle = vsReport
-    ExplicitWidth = 357
   end
   object StatusBar1: TStatusBar
     Left = 0
@@ -63,11 +62,9 @@ object Form1: TForm1
       item
         Width = 50
       end>
-    ExplicitLeft = 104
-    ExplicitWidth = 0
   end
   object FileDlg: TOpenDialog
-    Filter = 'War thunder VromFS|*.vromfs.bin'
+    Filter = 'War thunder VromFS|*.vromfs.bin| War thunder Dxp.bin|*.dxp.bin'
     Left = 112
     Top = 88
   end

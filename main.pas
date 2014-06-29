@@ -4,7 +4,7 @@ interface
 
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
-  Vcl.Controls, Vcl.Forms, Vcl.Dialogs,Zlib,VromFSClasses, Vcl.StdCtrls,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs,Zlib,WTExtractorClass, Vcl.StdCtrls,
   Vcl.ComCtrls, Vcl.Menus;
 
 type
@@ -41,33 +41,14 @@ type
 
 var
   Form1: TForm1;
-  Extractor: TVromFSExtractor;
+  Extractor: TWTExtractor;
   CurrIndex: integer;
 implementation
+ uses
+  VromFSClasses,DXPClasses;
 
 {$R *.dfm}
 
-function CreateDirEx(Dir: string): Boolean;
-var
-  I, L: Integer;
-  CurDir: string;
-begin
-  if ExcludeTrailingBackslash(Dir) = '' then
-    exit;
-  Dir := IncludeTrailingBackslash(Dir);
-  L := Length(Dir);
-  for I := 1 to L do
-  begin
-    CurDir := CurDir + Dir[I];
-    if Dir[I] = '/' then
-    begin
-      if not DirectoryExists(CurDir) then
-        if not CreateDir(CurDir) then
-          Exit;
-    end;
-  end;
-  Result := True;
-end;
 
 procedure TForm1.AddToListView(Filename: string; Offset, Size: integer);
 
@@ -124,10 +105,6 @@ end;
 
 procedure TForm1.FormCreate(Sender: TObject);
 begin
- Extractor:=TVromFSExtractor.Create;
- Extractor.UpdateFunction:=UpdateStatusBar;
- Extractor.ProcessFileFunction:=ProcessedFiles;
- Extractor.UpdateListFunction:=AddToListView;
  CurrIndex:=-1;
 end;
 
@@ -138,8 +115,20 @@ procedure TForm1.N2Click(Sender: TObject);
 begin
  CurrIndex:=-1;
  ListView1.Items.Clear;
+ if (Extractor <> nil) then
+  Extractor.Free;
  if FileDlg.Execute then
-  Extractor.OpenArchive(FileDlg.Filename) else exit;
+ begin
+  case FileDlg.FilterIndex of
+    1:Extractor:=TVromFSExtractor.Create;
+    2:Extractor:=TDXPExtractor.Create;
+  end;
+
+   Extractor.UpdateFunction:=UpdateStatusBar;
+   Extractor.ProcessFileFunction:=ProcessedFiles;
+   Extractor.UpdateListFunction:=AddToListView;
+  Extractor.OpenArchive(FileDlg.Filename)
+  end else exit;
 end;
 
 procedure TForm1.ProcessedFiles(Processed, Total: integer);
